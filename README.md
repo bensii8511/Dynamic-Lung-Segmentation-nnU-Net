@@ -2,25 +2,23 @@
 
 2D nnU-Net model for lung segmentation in coronal proton lung MRI. Trained on OE-MRI, 2D PREFUL and FLORET UTE images from healthy volunteers and patients (long COVID, GLILD).
 
-Built during my MSc project at UCL (Medical Physics and Biomedical Engineering), where it is used to get the respiratory waveform for PREFUL automatically from the segmented lung area in each frame, instead of drawing an ROI by hand.
-
-Reference masks were manually refined following an annotation protocol developed with two thoracic radiologists, each with over 15 years of experience.
+Masks were manually refined using an annotation protocol developed with two thoracic radiologists, each with over 15 years of experience.
 
 ![Segmentation examples](docs/segmentation_examples.png)
 
-## What's in this repo
+## Repo
 
-- `weights/` – the trained model (`PREFUL_OEMRI_lung_nnunet_v1.zip`, 58 MB)
-- `examples/` – six test images and the masks the model should give for them
+- `weights/` – trained model (`PREFUL_OEMRI_lung_nnunet_v1.zip`, 58 MB)
+- `examples/` – two images each from PREFUL, FLORET UTE and OE-MRI, plus the model output for them
 - `docs/` – figures
 
-The training and test images are available upon request: bensii125@gmail.com
+Training and test images are available upon request: bensii125@gmail.com
 
 ## How to run
 
-You need Python 3.10+ and PyTorch ([install guide](https://pytorch.org/get-started/locally/)). A GPU is not needed, CPU is fast enough.
+Needs Python 3.10+ and [PyTorch](https://pytorch.org/get-started/locally/). Runs fine on CPU.
 
-**1. Download this repo**
+**1. Get the repo**
 
 ```bash
 git clone https://github.com/bensii8511/Dynamic-Lung-Segmentation-nnU-Net.git
@@ -30,7 +28,7 @@ git clone https://github.com/bensii8511/Dynamic-Lung-Segmentation-nnU-Net.git
 cd Dynamic-Lung-Segmentation-nnU-Net
 ```
 
-Or use the green **Code** button → **Download ZIP**.
+or Code → Download ZIP.
 
 **2. Install nnU-Net**
 
@@ -38,7 +36,7 @@ Or use the green **Code** button → **Download ZIP**.
 pip install nnunetv2==2.6.2
 ```
 
-**3. Choose a folder for nnU-Net to store the model in**
+**3. Set the nnU-Net results folder** (any empty folder)
 
 Linux / macOS:
 
@@ -58,42 +56,35 @@ $env:nnUNet_results = "C:\path\to\nnUNet_results"
 nnUNetv2_install_pretrained_model_from_zip weights/PREFUL_OEMRI_lung_nnunet_v1.zip
 ```
 
-**5. Segment the example images**
+**5. Run on the examples**
 
 ```bash
 nnUNetv2_predict -i examples/input -o my_output -d 8511 -c 2d -f all
 ```
 
-Add `-device cpu` if you don't have a GPU. The masks in `my_output` should be the same as the ones in `examples/expected_output`.
+Add `-device cpu` if there is no GPU. Output should match `examples/expected_output`. The warning about `nnUNet_raw` / `nnUNet_preprocessed` not being set can be ignored.
 
-nnU-Net will warn that `nnUNet_raw` and `nnUNet_preprocessed` are not set. This is fine, they are only needed for training.
+![Examples](docs/examples.png)
 
-![Example inputs and predictions](docs/example.png)
+## Your own data
 
-## Running on your own data
-
-Put your images in one folder as NIfTI files, one 2D coronal slice per file, named like this:
+One 2D coronal slice per NIfTI file, all in one folder, with `_0000` at the end of the name (nnU-Net needs this):
 
 ```
-case_0001_0000.nii.gz
-case_0002_0000.nii.gz
+subject01_frame001_0000.nii.gz
+subject01_frame002_0000.nii.gz
 ```
 
-The `_0000` at the end is required by nnU-Net. Then run the same predict command with `-i` pointing to your folder.
+- Dynamic series: one file per time frame.
+- 3D volumes: one file per coronal slice.
+- Voxel spacing in the header has to be correct, nnU-Net resamples using it.
+- Keep the same orientation as the files in `examples/input` for that acquisition type.
 
-- Dynamic series (PREFUL, OE-MRI): save each time frame as a separate file.
-- 3D volumes (UTE): save each coronal slice as a separate file.
-- Check the voxel spacing in the NIfTI header is right. nnU-Net handles resampling and intensity normalisation itself.
-
-The output is a mask with the same size as the input: 0 = background, 1 = lung.
-
-For a dynamic series, counting the lung voxels in each frame gives the respiratory waveform:
-
-![Workflow](docs/workflow.png)
+Output mask: 0 = background, 1 = lung.
 
 ## Dataset
 
-401 2D images from 12 participants (healthy volunteers, long COVID, GLILD), all at 3T.
+401 2D images, 12 participants, 3T.
 
 | | OE-MRI | PREFUL | FLORET UTE |
 |---|---|---|---|
@@ -103,26 +94,25 @@ For a dynamic series, counting the lung voxels in each frame gives the respirato
 | In-plane resolution | 4.7 × 4.7 mm | 2 × 2 mm | 1 × 1 mm |
 | Slice thickness | 10 mm | 15 mm | 1 mm |
 | Matrix | 96 × 96 | 240 × 240 | 384 × 384 × 384 |
-| Field of view | 450 × 450 mm | 480 × 480 mm | 384 × 384 × 384 mm |
 
-For OE-MRI and PREFUL, frames were picked randomly across the time series so the whole breathing cycle is covered. The FLORET UTE volumes were split into coronal slices from posterior to anterior. The healthy volunteer OE-MRI data are from Kim et al. (2024).
+OE-MRI and PREFUL frames were picked randomly across the time series to cover the breathing cycle. FLORET UTE volumes were split into coronal slices, posterior to anterior.
 
-### Masks
-
-Masks were drawn in 3D Slicer: thresholding first, then manual correction. The annotation protocol was developed with two thoracic radiologists, each with over 15 years of experience in thoracic imaging:
+Masks were made in 3D Slicer (threshold, then manual correction):
 
 - aorta excluded
-- small pulmonary arteries and veins included
-- smooth contour at the lung–heart boundary, heart excluded, larger pulmonary vessels kept
+- small pulmonary vessels included
+- smooth contour at the lung–heart boundary, heart excluded
 - trachea and main bronchi excluded
 
 ![Annotation protocol](docs/annotation_protocol.jpg)
 
 ## Training
 
-nnU-Net v2, `2d` configuration, default trainer and plans. Patch size 96 × 96, batch size 20, Dice + cross-entropy loss, 1000 epochs, trained on all 401 images (`-f all`). About 1 h 42 min on an RTX 5090.
+nnU-Net v2, `2d`, default trainer and plans. Patch size 96 × 96, batch size 20, 1000 epochs, trained on all 401 images (`-f all`). Took about 1 h 42 min on an RTX 5090.
 
-To retrain on your own data in [nnU-Net format](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md):
+![nnU-Net configuration](docs/workflow.png)
+
+To retrain:
 
 ```bash
 nnUNetv2_plan_and_preprocess -d 8511 --verify_dataset_integrity
@@ -134,11 +124,9 @@ nnUNetv2_train 8511 2d all
 
 ## Results
 
-### Segmentation
+Dice on 91 held-out images (not used in training):
 
-Tested on 91 images that were not used for training.
-
-| Acquisition | Participants | Slices | Mean DSC | Per-slice SD |
+| Acquisition | Participants | Slices | Mean DSC | SD |
 |---|---|---|---|---|
 | PREFUL | 3 healthy, 3 long COVID, 1 GLILD | 60 | 0.967 | 0.007 |
 | OE-MRI | 2 long COVID | 24 | 0.963 | 0.012 |
@@ -146,42 +134,16 @@ Tested on 91 images that were not used for training.
 
 ![Dice per participant](docs/dice_per_participant.png)
 
-### PREFUL waveform
+## Notes
 
-The model was run on every frame of 2D PREFUL scans from 18 participants with cystic fibrosis (not seen in training), and the lung voxel count was used as the respiratory waveform. PREFUL VDP from this was compared with ¹²⁹Xe MRI VDP, next to three manually placed ROIs.
-
-| Waveform | Pearson r | Bias (%) | 95% limits of agreement (%) |
-|---|---|---|---|
-| Manual ROI 1 | 0.78 | 1.12 | −7.17 to 9.40 |
-| Manual ROI 2 | 0.82 | 0.43 | −6.98 to 7.83 |
-| Manual ROI 3 | 0.76 | 1.75 | −6.66 to 10.16 |
-| Automated (this model) | 0.77 | 0.65 | −7.63 to 8.93 |
-
-The automated waveform gives similar agreement with ¹²⁹Xe to manual ROI placement.
-
-## Limitations
-
-- Only tested on internal data from one site.
-- FLORET UTE: one healthy participant in training and one in testing.
-- Cystic fibrosis was not in the training data. It still worked, but was slightly worse on the most posterior and anterior slices.
-- 2D model, so every slice and frame is segmented on its own.
-- For research only, not for clinical use. Check the masks before using them.
-
-## Citation
-
-> Sii BZH. Deep Learning Lung Segmentation for Automated Waveform Extraction in 2D PREFUL MRI. MSc thesis, University College London; 2026.
-
-Please also cite nnU-Net:
-
-> Isensee F, Jaeger PF, Kohl SAA, Petersen J, Maier-Hein KH. nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nat Methods. 2021;18(2):203–211.
-
-OE-MRI data:
-
-> Kim M, Naish JH, Needleman SH, Tibiletti M, Taylor Y, O'Connor JPB, et al. Feasibility of dynamic T2*-based oxygen-enhanced lung MRI at 3T. Magn Reson Med. 2024;91(3):972–86.
+- Only tested on data from one site.
+- FLORET UTE is one participant in training and one in testing, so less reliable there.
+- 2D model, each slice is segmented on its own. Slightly worse on the most anterior and posterior slices.
+- Research use only.
 
 ## Acknowledgements
 
-Supervised by Dr Mina Kim and Dr Yohn Taylor (UCL). Cystic fibrosis PREFUL and ¹²⁹Xe data were acquired at Cincinnati Children's Hospital Medical Center.
+Supervised by Dr Mina Kim and Dr Yohn Taylor (UCL Medical Physics and Biomedical Engineering). Built with [nnU-Net](https://github.com/MIC-DKFZ/nnUNet).
 
 ## Contact
 
