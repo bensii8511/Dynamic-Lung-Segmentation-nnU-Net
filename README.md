@@ -10,7 +10,6 @@ Masks were manually refined using an annotation protocol developed with two thor
 
 - `weights/` – trained model (`PREFUL_OEMRI_lung_nnunet_v1.zip`, 58 MB)
 - `examples/` – two images each from PREFUL, FLORET UTE and OE-MRI, plus the model output for them
-- `scripts/` – DICOM to NIfTI converter and a viewer for checking masks
 - `docs/` – figures
 
 Training and test images are available upon request: bensii125@gmail.com
@@ -65,7 +64,7 @@ nnUNetv2_predict -i examples/input -o my_output -d 8511 -c 2d -f all
 
 Add `-device cpu` if there is no GPU. Output should match `examples/expected_output`. The warning about `nnUNet_raw` / `nnUNet_preprocessed` not being set can be ignored.
 
-![Examples](docs/examples.png)
+![Examples](docs/example_predictions.png)
 
 ## Your own data
 
@@ -82,24 +81,6 @@ subject01_frame002_0000.nii.gz
 - Keep the same orientation as the files in `examples/input` for that acquisition type.
 
 Output mask: 0 = background, 1 = lung.
-
-## Scripts
-
-Need `pip install pydicom nibabel matplotlib`.
-
-Convert a DICOM folder to a NIfTI volume (works with files that have no extension, 3D, 4D and multi-frame DICOM):
-
-```bash
-python scripts/dcm_to_nifti.py path/to/dicom_folder output.nii.gz
-```
-
-Scroll through images with the mask overlaid, to check the segmentations:
-
-```bash
-python scripts/view_masks.py examples/input examples/expected_output
-```
-
-Scroll or left/right arrows to change case, up/down arrows to change slice.
 
 ## Dataset
 
