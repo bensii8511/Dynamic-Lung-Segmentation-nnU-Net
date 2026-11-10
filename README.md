@@ -10,6 +10,7 @@ Masks were manually refined using an annotation protocol developed with two thor
 
 - `weights/` – trained model (`PREFUL_OEMRI_lung_nnunet_v1.zip`, 58 MB)
 - `examples/` – two images each from PREFUL, FLORET UTE and OE-MRI, plus the model output for them
+- `scripts/` – DICOM to NIfTI converter and a viewer for checking masks
 - `docs/` – figures
 
 Training and test images are available upon request: bensii125@gmail.com
@@ -81,6 +82,24 @@ subject01_frame002_0000.nii.gz
 - Keep the same orientation as the files in `examples/input` for that acquisition type.
 
 Output mask: 0 = background, 1 = lung.
+
+## Scripts
+
+Need `pip install pydicom nibabel matplotlib`.
+
+Convert a DICOM folder to a NIfTI volume (works with files that have no extension, 3D, 4D and multi-frame DICOM):
+
+```bash
+python scripts/dcm_to_nifti.py path/to/dicom_folder output.nii.gz
+```
+
+Scroll through images with the mask overlaid, to check the segmentations:
+
+```bash
+python scripts/view_masks.py examples/input examples/expected_output
+```
+
+Scroll or left/right arrows to change case, up/down arrows to change slice.
 
 ## Dataset
 
