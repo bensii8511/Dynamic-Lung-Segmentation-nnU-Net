@@ -1,0 +1,10 @@
+# Local prediction output
+my_output/
+
+# nnU-Net working folders
+nnUNet_raw/
+nnUNet_preprocessed/
+nnUNet_results/
+
+__pycache__/
+.DS_Store
